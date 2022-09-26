@@ -10,11 +10,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
 set(HEADERS
-    src/datastore.hpp
-    src/datastore.m.hpp
+    src/arduino-serial-lib.h
 )
 set(SOURCES
-    src/pdb.cpp
+    src/bridge.cpp
+    src/arduino-serial-lib.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
