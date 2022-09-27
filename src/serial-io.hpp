@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <optional>
 #include <memory>
 
 namespace sfx {
@@ -13,8 +14,8 @@ namespace sfx {
 
       /** Nested types **/
       struct config {
-        int         baudrate;
         std::string port;
+        int         baudrate;
 
         explicit operator bool() const
           { return baudrate != 0 && port.size() != 0; }
@@ -27,14 +28,14 @@ namespace sfx {
       config cfg() const { return _cfg; }
       status state() const
       { 
-        return bool(_config) && bool(_handle)
+        return bool(_cfg) && bool(_handle)
           ? status::Active
           : status::Dead
           ;
       }
 
       /** Methods **/
-      result begin(config cfg = _cfg);
+      result begin(config cfg);
       void end();
 
       std::pair<result, ssize_t>
@@ -49,22 +50,34 @@ namespace sfx {
       
       class handle {
       public:
-        ~handle();
-        static std::optional<handle> try_open(config cfg);
+        /** C calls wrappers **/
+        static std::optional<handle>
+          try_open(config cfg);
 
+        void terminate();
+
+        /** Ctors **/
         handle(const handle&) = delete;
         handle& operator= (const handle&) = delete;
         
-        handle(handle&& s);
-        handle& operator= (handle&& s);
+        handle(handle&& s)
+          : _fd{s._fd}
+          { s._fd = 0; }
+        handle& operator= (handle&& s)
+          { terminate(); _fd = s._fd; return *this; }
 
-        int fd() const { return _fd; }
-        explicit operator bool() const { return _fd != 0; }
+        ~handle() { terminate(); }
+
+        /** Accessors **/
+        int fd() const
+          { return _fd; }
+
+        explicit operator bool() const
+          { return _fd != 0; }
 
       private:
-        handle(int fd) : _fd{fd} {}
-
-        int _fd;
+        handle(int fd) : _fd{fd} {} /**< Prevent invalid handle **/
+        int _fd;                    /**< File descriptor **/
       };
 
       config                  _cfg;

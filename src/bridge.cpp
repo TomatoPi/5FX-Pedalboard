@@ -1,58 +1,76 @@
-#include "arduino-serial-lib.h"
+#include "serial-io.hpp"
 #include <termios.h>
 #include <iostream>
 #include <cstdint>
 #include <unistd.h>
 #include <vector>
+#include <string>
+#include <sstream>
 
+#include <error.h>
 
 void usage()
 {
-
+    std::cout << "5FX-Pedalboard port baudrate" << std::endl;
 }
 
 int main(int argc, char * const argv[])
 {
-    if (argc != 2)
+    if (argc != 3)
     {
         usage();
         return -1;
     }
 
-    int serialfd = serialport_init(argv[1], B9600);
-    if (serialfd < 0)
+    using namespace sfx;
+
+    io::serial::config config;
     {
-        std::cerr << "Failed open serial : " << argv[1] << std::endl;
+        config.port = argv[1];
+        std::stringstream ss;
+        ss << argv[2];
+        ss >> config.baudrate;
     }
 
+    io::serial serial;
+    if (config && io::serial::result::Ok != serial.begin(config))
+    {
+        std::cerr << "Failed open port" << std::endl;
+        perror("");
+        return -1;
+    }
+
+    /** Let the arduino wake up **/
     usleep(1000000);
 
-    while (true) {
-        char ibuffer[256];
-        int err;
-        if (-1 == (err = serialport_read_until(serialfd, ibuffer, '\n', 256, 1000)))
+    /** MAIN LOOP **/
+    while (io::serial::status::Active == serial.state())
+    {
         {
-            std::cout << "Failed read serial : " << err << std::endl;
-            return -1;
-        }
-        if (*ibuffer != 0) {
-            std::cout << "XX : " << ibuffer;
-        } else {
-            std::vector<std::uint8_t> obuffer = {0xC0, 0x03, 0x01, 0xC1, 0x0B, 0x01};
-            // std::vector<std::uint8_t> obuffer = {0xF0, 0x00, 0x00, 0xF7};
-            for (std::uint8_t x : obuffer) {
-                int err;
-                // std::cout << "Send : " << std::hex << (int)x << std::endl;
-                if (0 != (err = serialport_writebyte(serialfd, x))) {
-                    std::cerr << "Failed write serial : " << err << std::endl;
-                    return -1;
-                }
-                usleep(1000);
+            auto [code, msg] = serial.receive(64);
+            if (io::serial::result::Ok != code)
+            {
+                std::cerr << "Receive failure" << std::endl;
+                perror("");
+                serial.end();
+                break;
             }
-            serialport_flush(serialfd);
-            usleep(1000000);
+            /** DEBUG **/
+            std::cout << "Received ";
+            for (auto x : msg) std::cout << char(x) << ' ';
+            std::cout << '\n';
         }
-    }
 
+        {
+            uint8_t omsg[] = {0xC0, 0x03, 0x01, 0xC1, 0x0B, 0x01};
+            std::vector<std::byte> adaptor(
+                reinterpret_cast<std::byte*>(&omsg[0]),
+                reinterpret_cast<std::byte*>(&omsg[sizeof(omsg)])
+                );
+            auto [code, len] = serial.send(adaptor);
+        }
+
+        usleep(1000000);
+    }
     return 0;
 }

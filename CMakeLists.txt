@@ -14,7 +14,7 @@ set(HEADERS
 )
 set(SOURCES
     src/bridge.cpp
-    src/arduino-serial-lib.cpp
+    src/serial-io.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
