@@ -97,24 +97,14 @@ int serialport_close( int fd )
 }
 
 //
-int serialport_writebyte( int fd, uint8_t b)
+int serialport_write(int fd, uint8_t* msg, size_t len)
 {
-    int n = write(fd,&b,1);
-    if( n!=1)
-        return -1;
-    return 0;
-}
-
-//
-int serialport_write(int fd, const char* str)
-{
-    int len = strlen(str);
-    int n = write(fd, str, len);
-    if( n!=len ) {
+    int n = write(fd, msg, len);
+    if( n < 0 ) {
         perror("serialport_write: couldn't write whole string\n");
         return -1;
     }
-    return 0;
+    return n;
 }
 
 //
