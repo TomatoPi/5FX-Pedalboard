@@ -1,19 +1,19 @@
 #pragma once
 
-#include <Arduino.h>
+#include <stddef.h>
 
 namespace hw {
   
-  template <typename T, unsigned long Size>
+  template <typename T, size_t Size>
   class array {
   public :
 
     using element_type = T;
   
-    static constexpr unsigned long size = Size;
+    static constexpr size_t size = Size;
 
-    const T& operator[] (unsigned long i) const { return storage[i]; }
-    T&       operator[] (unsigned long i)       { return storage[i]; }
+    const T& operator[] (size_t i) const { return storage[i]; }
+    T&       operator[] (size_t i)       { return storage[i]; }
 
     const T* begin() const { return storage; }
     T*       begin()       { return storage; }
@@ -23,7 +23,7 @@ namespace hw {
 
     template <typename Filler>
     void fill(Filler&& fn) {
-      for (unsigned long i = 0; i<size; ++i)
+      for (size_t i = 0; i<size; ++i)
         storage[i] = fn(i);
     }
 
@@ -37,24 +37,16 @@ namespace hw {
     /** Nested types **/
     
     using element_type = typename Container::element_type;
-    
-    enum status : uint8_t {
-      Success = 0,
-      ContainerFull = 1,
-      OutOfBoundAccess = 2
-    };
 
     /** Members **/
     
-    static constexpr unsigned long max_size = Container::size;
-    
-    unsigned long size = 0;
-    status last_op     = status::Success;
+    static constexpr size_t max_size = Container::size;
+    size_t size = 0;
 
     /** Methods **/
   
-    const element_type& operator[] (unsigned long i) const { return (*container)[i]; }
-    element_type&       operator[] (unsigned long i)       { return (*container)[i]; }
+    const element_type& operator[] (size_t i) const { return (*container)[i]; }
+    element_type&       operator[] (size_t i)       { return (*container)[i]; }
   
     const element_type* begin() const { return container->cbegin(); }
     element_type*       begin()       { return container->begin(); }
