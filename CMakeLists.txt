@@ -10,7 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
 set(HEADERS
-    src/arduino-serial-lib.h
+    src/serial-io.hpp
+    src/protocol.hpp
 )
 set(SOURCES
     src/bridge.cpp
