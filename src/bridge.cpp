@@ -1,4 +1,5 @@
 #include "serial-io.hpp"
+#include "engine.hpp"
 #include <termios.h>
 #include <iostream>
 #include <cstdint>
