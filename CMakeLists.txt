@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(HEADERS
     src/serial-io.hpp
-    src/protocol.hpp
+    src/parser.hpp
 )
 set(SOURCES
     src/bridge.cpp
