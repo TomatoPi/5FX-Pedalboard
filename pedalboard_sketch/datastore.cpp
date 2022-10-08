@@ -73,7 +73,7 @@ namespace datastore
         continue;
       io::write(0xC0 | sw.get().id, cfg->footswitch_cc, sw.get().s);
       io::print("SW changed : ", sw.get().id, " : ", static_cast<int>(sw.get().s));
-      digitalWrite(harddefs::led_pin(sw.get().id), static_cast<int>(sw.get().s));
+      //digitalWrite(harddefs::led_pin(sw.get().id), static_cast<int>(sw.get().s));
     }
     for (const auto &l : leds)
     {
@@ -86,10 +86,10 @@ namespace datastore
     {
       if (!ex.changed())
         continue;
-      /* convert 10 bits value to 16 bits */
-      uint16_t val16 = ex.get().value << (16 - 10);
-      uint8_t msb = (val16 & 0xFF00) >> 8;
-      uint8_t lsb = (val16 & 0x00FF);
+      /* convert 10 bits value to 14 bits */
+      uint16_t val16 = ex.get().value << (14 - 10);
+      uint8_t msb = (val16 & (0x007F << 7)) >> 7;
+      uint8_t lsb = (val16 & 0x007F);
       io::write(0xC0 | ex.get().id, cfg->expression_cc, msb);
       io::write(0xC0 | ex.get().id, cfg->expression_cc + 0x20, lsb);
       io::print("Expr changed : ", ex.get().id, " : ", static_cast<int>(ex.get().value));
