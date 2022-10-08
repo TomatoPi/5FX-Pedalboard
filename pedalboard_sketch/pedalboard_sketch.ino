@@ -5,6 +5,7 @@
 #include "harddefs.hpp"
 #include "array.hpp"
 #include "datastore.hpp"
+#include "io.hpp"
 
 namespace datastore {
   static config configs;
@@ -37,36 +38,33 @@ namespace io {
     uint8_t cc      = serial_buffer[1];
     uint8_t val     = serial_buffer[2];
     
-    Serial.println("Accepted CC");
-    Serial.print(channel); Serial.print(" : ");
-    Serial.print(cc); Serial.print(" : ");
-    Serial.println(val);
+    io::print("Accepted CC : ", channel, " : ", cc, " : ", val);
 
     if (cc == datastore::configs.led_cc) {
       if (harddefs::channels_count <= channel) {
-        Serial.print("Rejected Invalid Channel : "); Serial.println(channel);
+        io::print("Rejected Invalid Channel : ", channel);
         return;
       }
       if (val < 0 || datastore::led::state::Count <= val) {
-        Serial.print("Rejected Invalid Value : "); Serial.println(val);
+        io::print("Rejected Invalid Value : ", val);
         return;
       }
       datastore::globals.leds[channel].set().s = static_cast<datastore::led::state>(val);
     }
     else if (cc == datastore::configs.expression_cc) {
       if (harddefs::exprs_count <= channel) {
-        Serial.print("Rejected Invalid Channel : "); Serial.println(channel);
+        io::print("Rejected Invalid Channel : ", channel);
         return;
       }
       if (val < 0 || datastore::led::state::Count <= val) {
-        Serial.print("Rejected Invalid Value : "); Serial.println(val);
+        io::print("Rejected Invalid Value : ", val);
         return;
       }
       datastore::globals.exprs[channel].set().s = static_cast<datastore::expr::state>(val);
     }
   }
   void process_sysex() {
-    Serial.println("AcceptedSysex");
+    io::print("AcceptedSysex");
   }
 
   /** Parsing methods **/
@@ -172,7 +170,7 @@ void setup() {
   Serial.begin(9600);
   
   datastore::globals.init(&datastore::configs);
-  datastore::globals.dump();
+  // datastore::globals.dump();
 
   io::serial_raw_storage.fill([](int){ return 0; });
   io::serial_buffer.clear();
@@ -180,6 +178,9 @@ void setup() {
 
   /** beautiful animation **/
 
+  /** Send presentation */
+  
+  io::present("5FX-Pedalboard:001");
 }
 
 void loop() {
@@ -188,6 +189,7 @@ void loop() {
   io::process_serial_in();
   datastore::globals.read_inputs();
   datastore::globals.push_changes();
+  Serial.flush();
 //*/
 
 /*
