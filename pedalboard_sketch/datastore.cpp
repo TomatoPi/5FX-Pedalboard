@@ -23,7 +23,7 @@ namespace datastore
     debounce_sw_timers.fill([](int16_t)
                             { return millis(); });
     /* update */
-    push_changes();
+    // push_changes();
   }
 
   void global::begin_frame()
@@ -73,7 +73,7 @@ namespace datastore
         continue;
       io::write(0xC0 | sw.get().id, cfg->footswitch_cc, sw.get().s);
       io::print("SW changed : ", sw.get().id, " : ", static_cast<int>(sw.get().s));
-      //digitalWrite(harddefs::led_pin(sw.get().id), static_cast<int>(sw.get().s));
+      // digitalWrite(harddefs::led_pin(sw.get().id), static_cast<int>(sw.get().s));
     }
     for (const auto &l : leds)
     {

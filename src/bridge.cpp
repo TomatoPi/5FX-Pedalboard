@@ -12,14 +12,14 @@
 #include <unistd.h>
 #include <error.h>
 
-#define __ENABLE_TESTING__
+// #define __ENABLE_TESTING__
 
 void usage()
 {
     std::cout << "5FX-Pedalboard port baudrate" << std::endl;
 }
 
-int main(int argc, char * const argv[])
+int main(int argc, char *const argv[])
 {
     using namespace sfx;
 
@@ -29,7 +29,6 @@ int main(int argc, char * const argv[])
         usage();
         return -1;
     }
-
 
     io::serial::config config;
     {
@@ -57,49 +56,47 @@ int main(int argc, char * const argv[])
     using iterator = parser_type::raw_citerator;
     using protocol_type = parser_type::protocol;
 
-    validator sysex = [](iterator begin, iterator end) -> result {
-            auto itr = std::find_if(begin+1, end, [](std::byte b)
-                -> bool { return bool(b & std::byte(0x80)); }
-                );
-            if (itr == end)
-                return result();
-            if (*itr != std::byte(0xF7))
-                return result(itr - begin, std::nullopt);
-            else
-                return result(
-                    itr - begin + 1,
-                    std::make_optional(static_cast<int>(*(begin+1))));
-        };
-    validator cc = [](iterator begin, iterator end) -> result {
-            if (end - begin < 3)
-                return result();
+    validator sysex = [](iterator begin, iterator end) -> result
+    {
+        auto itr = std::find_if(begin + 1, end, [](std::byte b) -> bool
+                                { return bool(b & std::byte(0x80)); });
+        if (itr == end)
+            return result();
+        if (*itr != std::byte(0xF7))
+            return result(itr - begin, std::nullopt);
+        else
+            return result(
+                itr - begin + 1,
+                std::make_optional(static_cast<int>(*(begin + 1))));
+    };
+    validator cc = [](iterator begin, iterator end) -> result
+    {
+        if (end - begin < 3)
+            return result();
 
-            if (bool(*(begin+1) & std::byte(0x80))) 
-                return result(1, std::nullopt);
-            if (bool(*(begin+2) & std::byte(0x80)))
-                return result(2, std::nullopt);
-            
-            int channel = static_cast<int>(*begin & std::byte(0x0F));
-            int cc = static_cast<int>(*(begin+1));
-            int value = static_cast<int>(*(begin+2));
+        if (bool(*(begin + 1) & std::byte(0x80)))
+            return result(1, std::nullopt);
+        if (bool(*(begin + 2) & std::byte(0x80)))
+            return result(2, std::nullopt);
 
-            return result(3, std::make_optional(channel));
-        };
+        int channel = static_cast<int>(*begin & std::byte(0x0F));
+        int cc = static_cast<int>(*(begin + 1));
+        int value = static_cast<int>(*(begin + 2));
+
+        return result(3, std::make_optional(channel));
+    };
 
     protocol_type protocol{
-            {std::byte(0xF0), sysex}
-        };
-    for (int i=0xC0; i<=0xCF; ++i)
+        {std::byte(0xF0), sysex}};
+    for (int i = 0xC0; i <= 0xCF; ++i)
         protocol.emplace(std::byte(i), cc);
 
     parser_type parser(protocol);
-    
 
     uint8_t omsg[] = {0xF0, 0x15, 0xF7, 0xC0, 0x03, 0x01, 0xC1, 0x0B, 0x01};
     std::vector<std::byte> adaptor(
-        reinterpret_cast<std::byte*>(&omsg[0]),
-        reinterpret_cast<std::byte*>(&omsg[sizeof(omsg)])
-        );
+        reinterpret_cast<std::byte *>(&omsg[0]),
+        reinterpret_cast<std::byte *>(&omsg[sizeof(omsg)]));
     auto vect = parser(adaptor);
 
     std::cout << "SIZE : " << vect.size() << std::endl;
@@ -126,17 +123,27 @@ int main(int argc, char * const argv[])
                 break;
             }
             /** DEBUG **/
-            std::cout << "Received ";
-            for (auto x : msg) std::cout << char(x) << ' ';
-            std::cout << '\n';
+            if (msg.size() != 0)
+            {
+                if (3 < msg.size() && msg[0] == std::byte(0xF0) && msg[msg.size() - 1] == std::byte(0xF7))
+                {
+                    std::cout << "Sysex" << std::endl;
+                }
+                else
+                {
+                    std::cout << "Received ";
+                    for (auto x : msg)
+                        std::cout << char(x); // << ' ';
+                    std::cout << '\n';
+                }
+            }
         }
 
         {
-            uint8_t omsg[] = {0xC0, 0x03, 0x01, 0xC1, 0x0B, 0x01};
+            uint8_t omsg[] = {0xC0, 0x03, 0x01, 0xC1, 0x0B, 0x00};
             std::vector<std::byte> adaptor(
-                reinterpret_cast<std::byte*>(&omsg[0]),
-                reinterpret_cast<std::byte*>(&omsg[sizeof(omsg)])
-                );
+                reinterpret_cast<std::byte *>(&omsg[0]),
+                reinterpret_cast<std::byte *>(&omsg[sizeof(omsg)]));
             auto [code, len] = serial.send(adaptor);
         }
 
